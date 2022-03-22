@@ -29,6 +29,8 @@
 
 using System.Runtime.CompilerServices;
 using Rhino.Mocks;
+using Xunit;
 
 [assembly: InternalsVisibleTo(RhinoMocks.StrongName)]
 //[assembly: InternalsVisibleTo(RhinoMocks.NormalName)]
+[assembly: CollectionBehavior(CollectionBehavior.CollectionPerClass, DisableTestParallelization = true)]

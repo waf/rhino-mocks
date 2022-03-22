@@ -24,7 +24,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
 				customer.IsPreferred = true;
 			}
 
-			Assert.Throws<ExpectationViolationException>("Unordered method call! The expected call is: 'Ordered: { ICustomer.get_Id(); }' but was: 'ICustomer.set_IsPreferred(True);'", () =>
+			AssertHelper.Throws<ExpectationViolationException>("Unordered method call! The expected call is: 'Ordered: { ICustomer.get_Id(); }' but was: 'ICustomer.set_IsPreferred(True);'", () =>
 			{
 				using (mocks.Playback())
 				{

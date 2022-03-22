@@ -38,7 +38,7 @@ namespace Rhino.Mocks.Tests
 				Expect.Call(bar.Foo).SetPropertyAndIgnoreArgument();
 			}
 
-			Assert.Throws<ExpectationViolationException>("IBar.set_Foo(any); Expected #1, Actual #0.", () =>
+			AssertHelper.Throws<ExpectationViolationException>("IBar.set_Foo(any); Expected #1, Actual #0.", () =>
 			{
 				using (mocks.Playback())
 				{
@@ -79,7 +79,7 @@ namespace Rhino.Mocks.Tests
 			}
 
 			mocks.Playback();
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IBar.set_Foo(0); Expected #0, Actual #1.\r\nIBar.set_Foo(1); Expected #1, Actual #0.", () => { bar.Foo = 0; });
 		}
 	}

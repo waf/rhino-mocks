@@ -18,7 +18,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
 
 			Expect.Call(eventLogMock.WriteLog(EventLogEntryType.SuccessAudit, "MOCK", null, null, 0)).Return(true);
 			
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"After specifying Repeat.Never(), you cannot specify a return value, exception to throw or an action to execute",
 				() => Expect.Call(eventLogMock.WriteLog(EventLogEntryType.FailureAudit, "MOCK", null, null, 0))
 				.Repeat.Never().Return(true));
@@ -33,7 +33,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
 			Log log = new Log(null, eventLogMock, "MOCK", true, false);
 
 			Expect.Call(eventLogMock.WriteLog(EventLogEntryType.SuccessAudit, "MOCK", null, null, 0)).Return(true);
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"After specifying Repeat.Never(), you cannot specify a return value, exception to throw or an action to execute",
 				() => Expect.Call(eventLogMock.WriteLog(EventLogEntryType.FailureAudit, "MOCK", null, null, 0))
 				.Return(true).Repeat.Never());

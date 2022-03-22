@@ -27,6 +27,7 @@
 #endregion
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Rhino.Mocks.Tests.RecordPlaybackSyntax
@@ -52,7 +53,7 @@ namespace Rhino.Mocks.Tests.RecordPlaybackSyntax
 		}
 
 		[Fact]
-		public void PlaybackThrowsOtherExceptionDoesntReport()
+		public async Task PlaybackThrowsOtherExceptionDoesntReport()
 		{
 			MockRepository mockRepository;
 			mockRepository = new MockRepository();
@@ -61,7 +62,7 @@ namespace Rhino.Mocks.Tests.RecordPlaybackSyntax
 			{
 				Expect.Call(mockedFoo.Bar()).Return(42);
 			}
-			Assert.Throws<ArgumentException>(delegate
+			await Assert.ThrowsAsync<ArgumentException>(() =>
 			{
 				using (mockRepository.Playback())
 				{
@@ -71,12 +72,12 @@ namespace Rhino.Mocks.Tests.RecordPlaybackSyntax
 		}
 
 		[Fact]
-		public void RecordThrowsOtherExceptionDoesntReport()
+		public async Task RecordThrowsOtherExceptionDoesntReport()
 		{
 			MockRepository mockRepository;
 			mockRepository = new MockRepository();
 			IFoo mockedFoo = mockRepository.StrictMock<IFoo>();
-			Assert.Throws<ArgumentException>(() =>
+			await Assert.ThrowsAsync<ArgumentException>(() =>
 			{
 				using (mockRepository.Record())
 				{

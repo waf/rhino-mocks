@@ -52,7 +52,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
 			mocks.ReplayAll();
 
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"SUT.NestedVirtualMethod(); Expected #1, Actual #0.",
 				() => subject.AssertWasCalled(it => it.NestedVirtualMethod()));
 		}

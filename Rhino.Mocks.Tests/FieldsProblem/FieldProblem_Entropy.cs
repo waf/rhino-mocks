@@ -88,7 +88,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
 
 			mocks.ReplayAll();
 			myObject.DoSomethingElse();
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IMyObject.DoSomething(); Expected #1, Actual #0.",
 				() => mocks.VerifyAll());
 		}
@@ -135,7 +135,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
 			Assert.Null(myObject.SomeProperty);
 			Assert.Null(myObject.SomeProperty);
 			
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				@"IMyObject.DoSomething(); Expected #0, Actual #1.",
 				() => myObject.DoSomething());
 		}
@@ -158,7 +158,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
 			Assert.Null(myObject.SomeProperty);
 			Assert.Null(myObject.SomeProperty);
 			
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				@"IMyObject.DoSomething(); Expected #0, Actual #1.",
 				() => myObject.DoSomething());
 		}

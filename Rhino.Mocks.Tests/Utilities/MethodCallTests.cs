@@ -54,7 +54,7 @@ namespace Rhino.Mocks.Tests.Utilities
 		[Fact]
 		public void MethodCallCtorWontAcceptNullMethod()
 		{
-			Assert.Throws<ArgumentNullException>(
+			AssertHelper.Throws<ArgumentNullException>(
 				"Value cannot be null.\r\nParameter name: method",
 				() => MethodCallUtil.StringPresentation(null, null, null));
 		}
@@ -63,7 +63,7 @@ namespace Rhino.Mocks.Tests.Utilities
 		public void MethodCallCtorWontAcceptNullArgs()
 		{
             MethodInfo method = typeof(string).GetMethod("StartsWith", new Type[] { typeof(string) });
-			Assert.Throws<ArgumentNullException>("Value cannot be null.\r\nParameter name: args",
+			AssertHelper.Throws<ArgumentNullException>("Value cannot be null.\r\nParameter name: args",
 			                                     () => MethodCallUtil.StringPresentation(null, method, null));
 		}
 

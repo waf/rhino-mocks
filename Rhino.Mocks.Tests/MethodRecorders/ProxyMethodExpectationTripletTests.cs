@@ -106,7 +106,7 @@ namespace Rhino.Mocks.Tests.MethodRecorders
 		[Fact]
 		public void ProxyNullThrows()
 		{
-			Assert.Throws<ArgumentNullException>(
+			AssertHelper.Throws<ArgumentNullException>(
 				"Value cannot be null.\r\nParameter name: proxy",
 				() => new ProxyMethodExpectationTriplet(null, endsWith, expectation));
 		}
@@ -114,7 +114,7 @@ namespace Rhino.Mocks.Tests.MethodRecorders
 		[Fact]
 		public void MethodNullThrows()
 		{
-			Assert.Throws<ArgumentNullException>(
+			AssertHelper.Throws<ArgumentNullException>(
 				"Value cannot be null.\r\nParameter name: method",
 				() => new ProxyMethodExpectationTriplet(proxy, null, expectation));
 		}
@@ -122,7 +122,7 @@ namespace Rhino.Mocks.Tests.MethodRecorders
 		[Fact]
 		public void ExpectationNullThrows()
 		{
-			Assert.Throws<ArgumentNullException>(
+			AssertHelper.Throws<ArgumentNullException>(
 				"Value cannot be null.\r\nParameter name: expectation",
 				() => new ProxyMethodExpectationTriplet(proxy, endsWith, null));
 		}

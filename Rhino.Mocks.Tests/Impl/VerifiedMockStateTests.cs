@@ -47,14 +47,14 @@ namespace Rhino.Mocks.Tests.Impl
 		[Fact]
 		public void ThrowsOnLastMethodOptions()
 		{
-			Assert.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
+			AssertHelper.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
 			                                         () => verify.LastMethodOptions.Return(null));
 		}
 
 		[Fact]
 		public void ThrowOnMethodCall()
 		{
-			Assert.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
+			AssertHelper.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
 														 () => verify.MethodCall(null, typeof(Object).GetMethod("ToString"))); 
 			
 		}
@@ -62,14 +62,14 @@ namespace Rhino.Mocks.Tests.Impl
 		[Fact]
 		public void ThrowsOnVerify()
 		{
-			Assert.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
+			AssertHelper.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
 												 () => verify.Verify());
 		}
 
 		[Fact]
 		public void ThrowsOnVerifyState()
 		{
-			Assert.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
+			AssertHelper.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
 												 () => GC.KeepAlive(verify.VerifyState));
 		}
 
@@ -77,7 +77,7 @@ namespace Rhino.Mocks.Tests.Impl
 		[Fact]
 		public void ThrowsOnReplay()
 		{
-			Assert.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
+			AssertHelper.Throws<InvalidOperationException>("This action is invalid when the mock object is in verified state.",
 											 () => verify.Replay());
 		}
 	}

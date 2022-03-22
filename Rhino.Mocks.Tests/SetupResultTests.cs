@@ -69,7 +69,7 @@ namespace Rhino.Mocks.Tests
 		[Fact]
 		public void SetupResultForNoCall()
 		{
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"Invalid call, the last call has been used or no call has been made (make sure that you are calling a virtual (C#) / Overridable (VB) method).",
 				() => SetupResult.For<object>(null));
 		}
@@ -124,7 +124,7 @@ namespace Rhino.Mocks.Tests
 		public void SetupResultForTheSameMethodTwiceCauseExcetion()
 		{
 			SetupResult.On(demo).Call(demo.Prop).Return("Ayende");
-			Assert.Throws<InvalidOperationException>( "The result for IDemo.get_Prop(); has already been setup.", () => SetupResult.On(demo).Call(demo.Prop).Return("Ayende"));
+			AssertHelper.Throws<InvalidOperationException>( "The result for IDemo.get_Prop(); has already been setup.", () => SetupResult.On(demo).Call(demo.Prop).Return("Ayende"));
 		}
 
 		[Fact]
@@ -133,7 +133,7 @@ namespace Rhino.Mocks.Tests
 			demo.ReturnStringNoArgs();
 			LastCall.Repeat.Never();
 			mocks.ReplayAll();
-			Assert.Throws<ExpectationViolationException>("IDemo.ReturnIntNoArgs(); Expected #0, Actual #1.", () => demo.ReturnIntNoArgs());
+			AssertHelper.Throws<ExpectationViolationException>("IDemo.ReturnIntNoArgs(); Expected #0, Actual #1.", () => demo.ReturnIntNoArgs());
 		}
 
 		[Fact]
@@ -142,7 +142,7 @@ namespace Rhino.Mocks.Tests
 			demo.ReturnStringNoArgs();
 			LastCall.Repeat.Never();
 			demo.ReturnStringNoArgs();
-			Assert.Throws<InvalidOperationException>("The result for IDemo.ReturnStringNoArgs(); has already been setup.", () => LastCall.Repeat.Never());
+			AssertHelper.Throws<InvalidOperationException>("The result for IDemo.ReturnStringNoArgs(); has already been setup.", () => LastCall.Repeat.Never());
 			
 		}
 	}

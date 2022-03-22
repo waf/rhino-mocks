@@ -72,7 +72,7 @@ namespace Rhino.Mocks.Tests
 			MockRepository mocks = new MockRepository();
 			IDemo demo = mocks.StrictMock<IDemo>();
 			demo.EnumNoArgs();
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"The last method call EnumNoArgs was not an event add / remove method",
 				() => LastCall.GetEventRaiser());
 		}
@@ -126,7 +126,7 @@ namespace Rhino.Mocks.Tests
 		{
 			AnyArgsExpectation expectation = new AnyArgsExpectation(new FakeInvocation(typeof(object).GetMethod("ToString")), new Range(1, 1));
 			expectation.ActionToExecute = (ToStringDelegate)delegate { return "fpp"; };
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"Trying to run a Do() delegate when no arguments were matched to the expectation.",
 				() => expectation.ReturnOrThrow(null, null));
 		}

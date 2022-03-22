@@ -75,7 +75,7 @@ namespace Rhino.Mocks.Tests.Impl
 		{
 			MockRepository mocks = new MockRepository();
 			RecordMockState recordState = new RecordMockState(new ProxyInstance(mocks), mocks);
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"This action is invalid when the mock object is in record state.",
 				() => recordState.Verify());
 		}
@@ -84,7 +84,7 @@ namespace Rhino.Mocks.Tests.Impl
         public void VerifyOnRecordThrowsOneMockType() {
             MockRepository mocks = new MockRepository();
             RecordMockState recordState = new RecordMockState(new ProxyInstance(mocks, typeof(IAnimal)), mocks);
-        	Assert.Throws<InvalidOperationException>(
+        	AssertHelper.Throws<InvalidOperationException>(
         		"This action is invalid when the mock object {Rhino.Mocks.Tests.IAnimal} is in record state.",
         		() => recordState.Verify());
         }
@@ -93,7 +93,7 @@ namespace Rhino.Mocks.Tests.Impl
         public void VerifyOnRecordThrowsTwoMockTypes() {
             MockRepository mocks = new MockRepository();
             RecordMockState recordState = new RecordMockState(new ProxyInstance(mocks, typeof(IAnimal), typeof(IDemo)), mocks);
-        	Assert.Throws<InvalidOperationException>(
+        	AssertHelper.Throws<InvalidOperationException>(
         		"This action is invalid when the mock object {Rhino.Mocks.Tests.IAnimal, Rhino.Mocks.Tests.IDemo} is in record state.",
         		() => recordState.Verify());
         }
@@ -121,7 +121,7 @@ namespace Rhino.Mocks.Tests.Impl
 		[Fact]
 		public void PassingNullProxyCauseException()
 		{
-			Assert.Throws<ArgumentNullException>(
+			AssertHelper.Throws<ArgumentNullException>(
 				"Value cannot be null.\r\nParameter name: proxy",
 				() => new RecordMockState(null, null));
 		}
@@ -129,7 +129,7 @@ namespace Rhino.Mocks.Tests.Impl
 		[Fact]
 		public void PassingNullmocksCauseException()
 		{
-			Assert.Throws<ArgumentNullException>(
+			AssertHelper.Throws<ArgumentNullException>(
 				"Value cannot be null.\r\nParameter name: repository",
 				() => new RecordMockState(new ProxyInstance(null), null));
 		}
@@ -141,7 +141,7 @@ namespace Rhino.Mocks.Tests.Impl
 			ProxyInstance proxy = new ProxyInstance(mocks);
 			RecordMockState recordState = new RecordMockState(proxy, mocks);
             recordState.MethodCall(new FakeInvocation(method), method, "");
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"Previous method 'String.StartsWith(\"\");' requires a return value or an exception to throw.",
 				() => recordState.Replay());
 		}

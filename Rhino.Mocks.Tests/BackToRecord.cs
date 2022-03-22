@@ -97,7 +97,7 @@ namespace Rhino.Mocks.Tests
             mocks.BackToRecord(abstractClass, BackToRecordOptions.OriginalMethodsToCall);
             mocks.ReplayAll();
 
-        	Assert.Throws<ExpectationViolationException>(
+        	AssertHelper.Throws<ExpectationViolationException>(
         		"AbstractClass.Add(5); Expected #0, Actual #1.",
         		() => abstractClass.Add(5));
         }
@@ -113,7 +113,7 @@ namespace Rhino.Mocks.Tests
 
             mocks.ReplayAll();
 
-        	Assert.Throws<ExpectationViolationException>("IDemo.get_Prop(); Expected #0, Actual #1.", delegate
+        	AssertHelper.Throws<ExpectationViolationException>("IDemo.get_Prop(); Expected #0, Actual #1.", delegate
         	{
         		string prop = mock.Prop;
         	});
@@ -135,7 +135,7 @@ namespace Rhino.Mocks.Tests
 
             mock.VoidNoArgs();
 
-        	Assert.Throws<ExpectationViolationException>(
+        	AssertHelper.Throws<ExpectationViolationException>(
         		"IDemo.VoidNoArgs(); Expected #1, Actual #0.",
         		() => mocks.VerifyAll());
         }

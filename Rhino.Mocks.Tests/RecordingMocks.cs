@@ -128,7 +128,7 @@ namespace Rhino.Mocks.Tests
 
 			Assert.Equal(1, foo54.Bar("asdg"));
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IFoo54.Bar(ends with \"d\"); Expected #1, Actual #0.",
 				() => foo54.AssertWasCalled(x => x.Bar(Arg.Text.EndsWith("d"))));
 		}
@@ -216,7 +216,7 @@ namespace Rhino.Mocks.Tests
 			demo.Expect(x => x.DoSomethingElse());
 			mocks.Replay(demo);
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IFoo54.DoSomethingElse(); Expected #1, Actual #0.",
 				() => mocks.VerifyAll());
 		}
@@ -230,7 +230,7 @@ namespace Rhino.Mocks.Tests
 
 			demo.Expect(x => x.DoSomething());
 			mocks.Replay(demo);
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"Method 'IFoo54.DoSomething();' requires a return value or an exception to throw.",
 				() => Assert.Equal(1, demo.DoSomething()));
 		}
@@ -279,7 +279,7 @@ namespace Rhino.Mocks.Tests
 
 			Assert.Equal(1, foo54.DoSomething());
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"Expected that IFoo54.DoSomething(); would not be called, but it was found on the actual calls made on the mocked object.",
 				() => foo54.AssertWasNotCalled(x => x.DoSomething()));
 		}
@@ -300,7 +300,7 @@ namespace Rhino.Mocks.Tests
 			var foo54 = MockRepository.GenerateMock<IFoo54>();
 
 			foo54.Bar("blah");
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IFoo54.Bar(\"blah1\"); Expected #1, Actual #0.",
 				() => foo54.AssertWasCalled(x => x.Bar("blah1")));
 		}
@@ -351,7 +351,7 @@ namespace Rhino.Mocks.Tests
 
 			foo54.DoSomething();
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IFoo54.DoSomething(); Expected #2, Actual #1.",
 				() => foo54.VerifyAllExpectations());
 		}
@@ -376,7 +376,7 @@ namespace Rhino.Mocks.Tests
 
 			foo54.DoSomething();
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IFoo54.DoSomething(); Expected #2, Actual #1.",
 				() => foo54.AssertWasCalled(x => x.DoSomething(), o => o.Repeat.Twice()));
 		}
@@ -390,7 +390,7 @@ namespace Rhino.Mocks.Tests
 
 			Assert.Equal(0, foo54.Bar("great test"));
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				@"IFoo54.Bar(starts with ""boo""); Expected #1, Actual #0.",
 				() => foo54.VerifyAllExpectations());
 		}
@@ -415,7 +415,7 @@ namespace Rhino.Mocks.Tests
 
 			foo54.Expect(x => x.DoSomething()).Return(1);
 
-			Assert.Throws<ExpectationViolationException>("IFoo54.DoSomething(); Expected #1, Actual #0.",
+			AssertHelper.Throws<ExpectationViolationException>("IFoo54.DoSomething(); Expected #1, Actual #0.",
 			                                             () => foo54.VerifyAllExpectations());
 		}
 
@@ -462,7 +462,7 @@ namespace Rhino.Mocks.Tests
 			demo.Stub(x => x.DoSomething()).Return(1);
 			mocks.Replay(demo);
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IFoo54.DoSomething(); Expected #1, Actual #0.",
 				() => demo.AssertWasCalled(x => x.DoSomething()));
 		}
@@ -560,7 +560,7 @@ namespace Rhino.Mocks.Tests
 
 			demo.Bar("yoho");
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IFoo54.Bar(a => (a.StartsWith(\"b\") && a.Contains(\"ba\"))); Expected #1, Actual #0."
 				, () => demo.AssertWasCalled(x => x.Bar(Arg<string>.Matches((string a) => a.StartsWith("b") && a.Contains("ba")))));
 		}
@@ -572,7 +572,7 @@ namespace Rhino.Mocks.Tests
 			MockRepository mocks = new MockRepository();
 			IFoo54 demo = mocks.DynamicMock<IFoo54>();
 			mocks.ReplayAll();
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"The expectation was removed from the waiting expectations list, did you call Repeat.Any() ? This is not supported in AssertWasCalled()",
 				() => demo.AssertWasCalled(x => x.Bar("a"), o => o.Repeat.Any()));
 		}
@@ -584,7 +584,7 @@ namespace Rhino.Mocks.Tests
 			IFoo54 demo = mocks.DynamicMock<IFoo54>();
 			mocks.ReplayAll();
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IFoo54.DoSomething(); Expected #1, Actual #0.",
 				() => demo.AssertWasCalled(x => x.DoSomething()));
 		}
@@ -596,7 +596,7 @@ namespace Rhino.Mocks.Tests
 			IFoo54 demo = mocks.DynamicMock<IFoo54>();
 
 			mocks.ReplayAll();
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"IFoo54.DoSomethingElse(); Expected #1, Actual #0.",
 				() => demo.AssertWasCalled(x => x.DoSomethingElse()));
 		}
@@ -609,7 +609,7 @@ namespace Rhino.Mocks.Tests
 			IFoo54 demo = mocks.DynamicMock<IFoo54>();
 			mocks.Replay(demo);
 
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"You can only use a single expectation on AssertWasCalled(), use separate calls to AssertWasCalled() if you want to verify several expectations",
 				() => demo.AssertWasCalled(x =>
 				{
@@ -625,7 +625,7 @@ namespace Rhino.Mocks.Tests
 			IFoo54 demo = mocks.DynamicMock<IFoo54>();
 			mocks.Replay(demo);
 
-			Assert.Throws<InvalidOperationException>(
+			AssertHelper.Throws<InvalidOperationException>(
 				"No expectations were setup to be verified, ensure that the method call in the action is a virtual (C#) / overridable (VB.Net) method call",
 				() => demo.AssertWasCalled(x => { }));
 		}

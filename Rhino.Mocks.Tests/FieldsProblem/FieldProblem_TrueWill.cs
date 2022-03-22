@@ -23,7 +23,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
         public void ReadWritePropertyBug2()
         {
             ISomeThing thing = MockRepository.GenerateStub<ISomeThing>();
-        	Assert.Throws<InvalidOperationException>(
+        	AssertHelper.Throws<InvalidOperationException>(
         		@"You are trying to set an expectation on a property that was defined to use PropertyBehavior.
 Instead of writing code such as this: mockObject.Stub(x => x.SomeProperty).Return(42);
 You can use the property directly to achieve the same result: mockObject.SomeProperty = 42;",

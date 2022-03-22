@@ -61,21 +61,21 @@ namespace Rhino.Mocks.Tests
         [Fact]
         public void ExceptionIfLastMethodCallIsNotProperty()
         {
-        	Assert.Throws<InvalidOperationException>("Last method call was not made on a setter or a getter",
+        	AssertHelper.Throws<InvalidOperationException>("Last method call was not made on a setter or a getter",
         	                                         () => Expect.Call(demo.EnumNoArgs()).PropertyBehavior());
         }
 
         [Fact]
         public void ExceptionIfPropHasOnlyGetter()
         {
-        	Assert.Throws<InvalidOperationException>("Property must be read/write",
+        	AssertHelper.Throws<InvalidOperationException>("Property must be read/write",
         	                                         () => Expect.Call(demo.ReadOnly).PropertyBehavior());
         }
 
         [Fact]
         public void ExceptionIfPropHasOnlySetter()
         {
-        	Assert.Throws<InvalidOperationException>("Property must be read/write",
+        	AssertHelper.Throws<InvalidOperationException>("Property must be read/write",
         	                                         () => Expect.Call(demo.WriteOnly).PropertyBehavior());
         }
 
@@ -106,7 +106,7 @@ namespace Rhino.Mocks.Tests
             IWithIndexers x = (IWithIndexers)mocks.StrictMock(typeof(IWithIndexers));
             Expect.Call(x[1]).PropertyBehavior();
             mocks.ReplayAll();
-        	Assert.Throws<InvalidOperationException>(
+        	AssertHelper.Throws<InvalidOperationException>(
         		"Can't return a value for property Item because no value was set and the Property return a value type.",
         		() => GC.KeepAlive(x[1]));
         }

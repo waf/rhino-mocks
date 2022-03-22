@@ -125,7 +125,7 @@ namespace Rhino.Mocks.Tests
 			TestClass t = (TestClass)mocks.StrictMock(typeof(TestClass));
             mocks.ReplayAll();
             
-        	Assert.Throws<ExpectationViolationException>(
+        	AssertHelper.Throws<ExpectationViolationException>(
         		"TestClass.Method(); Expected #0, Actual #1.",
 				() => t.Method());
         }
@@ -170,7 +170,7 @@ namespace Rhino.Mocks.Tests
 			TestClass t = (TestClass)mocks.StrictMock(typeof(TestClass));
             Expect.Call(t.MethodGettingParameters(42, "foo")).Return("bar");
             mocks.ReplayAll();
-            Assert.Throws<ExpectationViolationException>(
+            AssertHelper.Throws<ExpectationViolationException>(
         		"TestClass.MethodGettingParameters(19, \"foo\"); Expected #0, Actual #1.\r\nTestClass.MethodGettingParameters(42, \"foo\"); Expected #1, Actual #0.",
 				() => t.MethodGettingParameters(19, "foo"));
         }
@@ -204,7 +204,7 @@ namespace Rhino.Mocks.Tests
             TestClass t = (TestClass)mocks.StrictMock(typeof(TestClass));
             t.StringProperty = "foo";
             mocks.ReplayAll();
-            Assert.Throws<ExpectationViolationException>(
+            AssertHelper.Throws<ExpectationViolationException>(
         		"TestClass.set_StringProperty(\"bar\"); Expected #0, Actual #1.\r\nTestClass.set_StringProperty(\"foo\"); Expected #1, Actual #0.",
 				() => t.StringProperty = "bar");
         }
@@ -239,7 +239,7 @@ namespace Rhino.Mocks.Tests
 			Expect.Call(t.GenericMethod<string>("foo")).Return(42);
 			mocks.ReplayAll();
 			
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				@"TestClass.GenericMethod<System.Int32>(""foo""); Expected #1, Actual #1.
 TestClass.GenericMethod<System.String>(""foo""); Expected #1, Actual #0.",
 				() => Assert.Equal(42, t.GenericMethod<int>("foo")));
@@ -296,7 +296,7 @@ TestClass.GenericMethod<System.String>(""foo""); Expected #1, Actual #0.",
 			AppDomain appDomain = mocks.StrictMock<AppDomain>();
 			Expect.Call(appDomain.BaseDirectory).Return("/home/user/ayende");
 			mocks.ReplayAll();
-			Assert.Throws<ExpectationViolationException>(@"AppDomain.get_BaseDirectory(); Expected #1, Actual #0.",
+			AssertHelper.Throws<ExpectationViolationException>(@"AppDomain.get_BaseDirectory(); Expected #1, Actual #0.",
 			                                             () => mocks.VerifyAll());
     	}
 

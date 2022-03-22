@@ -40,7 +40,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
 			catch { /* valid for code under test to catch all */ }
 			interfaceWithThreeMethods.C();
 
-			Assert.Throws<ExpectationViolationException>(
+			AssertHelper.Throws<ExpectationViolationException>(
 				"Unordered method call! The expected call is: 'Ordered: { IInterfaceWithThreeMethods.C(); }' but was: 'IInterfaceWithThreeMethods.B();'",
 				() => mockRepository.VerifyAll());
 		}

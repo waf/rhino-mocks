@@ -77,7 +77,7 @@ namespace Rhino.Mocks.Tests
     [Fact]
     public void CantCreatePartialMockFromInterfaces()
     {
-    	Assert.Throws<InvalidOperationException>(
+    	AssertHelper.Throws<InvalidOperationException>(
     		"Can't create a partial mock from an interface",
     		() => MockRepository.GeneratePartialMock<IDemo>());
     }
@@ -85,7 +85,7 @@ namespace Rhino.Mocks.Tests
     [Fact]
     public void CallAnAbstractMethodWithoutSettingExpectation()
     {
-    	Assert.Throws<ExpectationViolationException>(
+    	AssertHelper.Throws<ExpectationViolationException>(
     		"AbstractClass.Decrement(); Expected #0, Actual #1.",
     		() => abs.Decrement());
     }

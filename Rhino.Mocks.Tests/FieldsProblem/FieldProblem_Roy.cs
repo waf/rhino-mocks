@@ -44,7 +44,7 @@ namespace Rhino.Mocks.Tests.FieldsProblem
         {
             MockRepository repository = new MockRepository();
             IGetResults resultGetter = repository.Stub<IGetResults>();
-        	Assert.Throws<InvalidOperationException>(
+        	AssertHelper.Throws<InvalidOperationException>(
         		"You have already specified constraints for this method. (IGetResults.GetSomeNumber(contains \"b\");)",
         		() =>
         		{
