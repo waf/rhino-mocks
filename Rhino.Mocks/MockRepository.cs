@@ -125,6 +125,7 @@ namespace Rhino.Mocks
         /// <summary>
         /// This is a map of types to ProxyGenerators.
         /// </summary>
+        [ThreadStatic]
         private static readonly IDictionary<Type, ProxyGenerator> generatorMap = new Dictionary<Type, ProxyGenerator>();
 
         /*
@@ -137,6 +138,7 @@ namespace Rhino.Mocks
         /// <summary>
         /// This is used to record the last repository that has a method called on it.
         /// </summary>
+        [ThreadStatic]
         internal static MockRepository lastRepository;
 
         /*
