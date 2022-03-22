@@ -160,22 +160,6 @@ namespace Rhino.Mocks
       return CreateMockInReplay(r => r.PartialMultiMock(type, extraTypes, argumentsForConstructor));
     }
 
-    /// <summary>
-    /// Generate a mock object with dynamic replay semantics and remoting without needing the mock repository
-    /// </summary>
-    public static T GenerateDynamicMockWithRemoting<T>(params object[] argumentsForConstructor)
-    {
-      return CreateMockInReplay(r => r.DynamicMockWithRemoting<T>(argumentsForConstructor));
-    }
-
-    /// <summary>
-    /// Generate a mock object with strict replay semantics and remoting without needing the mock repository
-    /// </summary>
-    public static T GenerateStrictMockWithRemoting<T>(params object[] argumentsForConstructor) where T : class
-    {
-      return CreateMockInReplay(r => r.StrictMockWithRemoting<T>(argumentsForConstructor));
-    }
-
     /// <summary>Helper method to create a mock object without a repository instance and put the object back into replay mode.</summary>
     /// <typeparam name="T">The type of mock object to create</typeparam>
     /// <param name="createMock">A delegate that uses a mock repository instance to create the underlying mock</param>

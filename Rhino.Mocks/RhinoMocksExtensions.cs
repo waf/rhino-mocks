@@ -26,7 +26,6 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 
-#if DOTNET35
 using System;
 using System.Collections.Generic;
 using Rhino.Mocks.Exceptions;
@@ -485,4 +484,3 @@ namespace Rhino.Mocks
 		#endregion
 	}
 }
-#endif

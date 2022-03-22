@@ -34,13 +34,11 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Reflection;
 using System.Text;
-using Castle.Core.Interceptor;
 using Castle.DynamicProxy;
 using Rhino.Mocks.Exceptions;
 using Rhino.Mocks.Generated;
 using Rhino.Mocks.Impl;
 using Rhino.Mocks.Impl.Invocation;
-using Rhino.Mocks.Impl.RemotingMock;
 using Rhino.Mocks.Interfaces;
 using Rhino.Mocks.MethodRecorders;
 
@@ -211,10 +209,10 @@ namespace Rhino.Mocks
         {
             proxyGenerationOptions = new ProxyGenerationOptions
             {
-                AttributesToAddToGeneratedTypes = 
-                    {
-                        new __ProtectAttribute()
-                    }
+                AdditionalAttributes =
+                {
+                    CustomAttributeInfo.FromExpression(() => new __ProtectAttribute())
+                }
             };
             recorders = new Stack();
             repeatableMethods = new ProxyMethodExpectationsDictionary();
@@ -342,53 +340,7 @@ namespace Rhino.Mocks
         /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
         public object StrictMock(Type type, params object[] argumentsForConstructor)
         {
-            if (ShouldUseRemotingProxy(type, argumentsForConstructor))
-                return RemotingMock(type, CreateRecordState);
             return StrictMultiMock(type, new Type[0], argumentsForConstructor);
-        }
-
-        /// <summary>
-        /// Creates a remoting mock for the specified type.
-        /// </summary>
-        /// <param name="type">Type.</param>
-        /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        [Obsolete("Use StrictMockWithRemoting instead")]
-        public object CreateMockWithRemoting(Type type, params object[] argumentsForConstructor)
-        {
-            return StrictMockWithRemoting(type, argumentsForConstructor);
-        }
-
-        /// <summary>
-        /// Creates a strict remoting mock for the specified type.
-        /// </summary>
-        /// <param name="type">Type.</param>
-        /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        public object StrictMockWithRemoting(Type type, params object[] argumentsForConstructor)
-        {
-            return RemotingMock(type, CreateRecordState);
-        }
-
-        /// <summary>
-        /// Creates a remoting mock for the specified type.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        /// <returns></returns>
-        [Obsolete("Use StrictMockWithRemoting instead")]
-        public T CreateMockWithRemoting<T>(params object[] argumentsForConstructor)
-        {
-            return StrictMockWithRemoting<T>(argumentsForConstructor);
-        }
-
-        /// <summary>
-        /// Creates a strict remoting mock for the specified type.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        /// <returns></returns>
-        public T StrictMockWithRemoting<T>(params object[] argumentsForConstructor)
-        {
-            return (T)RemotingMock(typeof(T), CreateRecordState);
         }
 
         /// <summary>
@@ -471,26 +423,7 @@ namespace Rhino.Mocks
         /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
         public object DynamicMock(Type type, params object[] argumentsForConstructor)
         {
-            if (ShouldUseRemotingProxy(type, argumentsForConstructor))
-                return RemotingMock(type, CreateDynamicRecordState);
             return DynamicMultiMock(type, new Type[0], argumentsForConstructor);
-        }
-
-        /// <summary>Creates a dynamic mock for the specified type.</summary>
-        /// <param name="type">Type.</param>
-        /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        public object DynamicMockWithRemoting(Type type, params object[] argumentsForConstructor)
-        {
-            return RemotingMock(type, CreateDynamicRecordState);
-        }
-
-        /// <summary>Creates a dynamic mock for the specified type.</summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        /// <returns></returns>
-        public T DynamicMockWithRemoting<T>(params object[] argumentsForConstructor)
-        {
-            return (T)RemotingMock(typeof(T), CreateDynamicRecordState);
         }
 
         /// <summary>Creates a mock object that defaults to calling the class methods if no expectation is set on the method.</summary>
@@ -520,21 +453,6 @@ namespace Rhino.Mocks
             List<Type> extraTypesWithMarker = new List<Type>(extraTypes);
             extraTypesWithMarker.Add(typeof(IPartialMockMarker));
             return CreateMockObject(type, CreatePartialRecordState, extraTypesWithMarker.ToArray(), argumentsForConstructor);
-        }
-
-        /// <summary>Creates a mock object using remoting proxies</summary>
-        /// <param name="type">Type to mock - must be MarshalByRefObject</param>
-        /// <returns>Mock object</returns>
-        /// <remarks>Proxy mock can mock non-virtual methods, but not static methods</remarks>
-        /// <param name="factory">Creates the mock state for this proxy</param>
-        private object RemotingMock(Type type, CreateMockState factory)
-        {
-            ProxyInstance rhinoProxy = new ProxyInstance(this, type);
-            RhinoInterceptor interceptor = new RhinoInterceptor(this, rhinoProxy,invocationVisitorsFactory.CreateStandardInvocationVisitors(rhinoProxy, this));
-            object transparentProxy = new RemotingMockGenerator().CreateRemotingMock(type, interceptor, rhinoProxy);
-            IMockState value = factory(rhinoProxy);
-            proxies.Add(transparentProxy, value);
-            return transparentProxy;
         }
 
         /// <summary>
@@ -883,11 +801,6 @@ namespace Rhino.Mocks
                 return (IMockedObject)mockedInstance;
             }
 
-            if (RemotingMockGenerator.IsRemotingProxy(mockedInstance))
-            {
-                return RemotingMockGenerator.GetMockedObjectFromProxy(mockedInstance);
-            }
-
             return null;
         }
 
@@ -1093,8 +1006,6 @@ namespace Rhino.Mocks
         /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
         public T StrictMock<T>(params object[] argumentsForConstructor)
         {
-            if (ShouldUseRemotingProxy(typeof(T), argumentsForConstructor))
-                return (T)RemotingMock(typeof(T), CreateRecordState);
             return (T)CreateMockObject(typeof(T), CreateRecordState, new Type[0], argumentsForConstructor);
         }
 
@@ -1118,8 +1029,6 @@ namespace Rhino.Mocks
         public T DynamicMock<T>(params object[] argumentsForConstructor)
             where T : class
         {
-            if (ShouldUseRemotingProxy(typeof(T), argumentsForConstructor))
-                return (T)RemotingMock(typeof(T), CreateDynamicRecordState);
             return (T)CreateMockObject(typeof(T), CreateDynamicRecordState, new Type[0], argumentsForConstructor);
         }
 
@@ -1236,8 +1145,6 @@ namespace Rhino.Mocks
         public object Stub(Type type, params object[] argumentsForConstructor)
         {
             CreateMockState createStub = mockedObject => new StubRecordMockState(mockedObject, this);
-            if (ShouldUseRemotingProxy(type, argumentsForConstructor))
-                return RemotingMock(type, createStub);
             return CreateMockObject(type, createStub, new Type[0], argumentsForConstructor);
         }
 
