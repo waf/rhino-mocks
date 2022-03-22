@@ -599,26 +599,6 @@ namespace Rhino.Mocks.Tests
             Assert.NotNull(MockRepository.GenerateMock<IDemo>());
         }
 
-		[Fact]
-		public void GenerateStrictMockWithRemoting()
-		{
-            IDemo mock = MockRepository.GenerateStrictMockWithRemoting<IDemo>();
-			Assert.NotNull(mock);
-#if DOTNET35
-			Assert.True(mock.GetMockRepository().IsInReplayMode(mock));
-#endif
-		}
-
-		[Fact]
-		public void GenerateDynamicMockWithRemoting()
-		{
-            IDemo mock = MockRepository.GenerateDynamicMockWithRemoting<IDemo>();
-			Assert.NotNull(mock);
-#if DOTNET35
-			Assert.True(mock.GetMockRepository().IsInReplayMode(mock));
-#endif
-        }
-
 		public class ClassWithNonDefaultConstructor 
         {
             public ClassWithNonDefaultConstructor(string someString, int someInt) {}
