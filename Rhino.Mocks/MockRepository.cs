@@ -2,10 +2,10 @@
 
 // Copyright (c) 2005 - 2007 Ayende Rahien (ayende@ayende.com)
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright notice,
 //     this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
 //     * Neither the name of Ayende Rahien nor the names of its
 //     contributors may be used to endorse or promote products derived from this
 //     software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,10 +30,12 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using Castle.DynamicProxy;
 using Rhino.Mocks.Exceptions;
 using Rhino.Mocks.Generated;
@@ -47,25 +49,25 @@ namespace Rhino.Mocks
     /*
      * class: MockRepository
      * The MockRepository is the main interaction point with Rhino Mocks.
-     * 
+     *
      * Common usage pattern is to create the <Rhino.Mocks.MockRepository> on [SetUp]
      * and then create mock objects using either <Rhino.Mocks.MockRepository.CreateMock> or
      * <Rhino.Mocks.MockRepository.DynamicMock> and setup expectations on the mock object(s) by
      * callling their methods. A call to <Rhino.Mocks.MockRepository.ReplayAll> would move the mock
-     * object(s) to replay state, a call to <Rhino.Mocks.MockRepository.VerifyAll> is made from the 
+     * object(s) to replay state, a call to <Rhino.Mocks.MockRepository.VerifyAll> is made from the
      * [TearDown] method.
-     * 
+     *
      * Thread Safety:
      * MockRepository is capable of verifying in multiply threads, but recording in multiply threads
-     * is not recommended. If you need to do so you _must_ use the <Rhino.Mocks.Expect.On> and 
-     * <Rhino.Mocks.LastCall.On> methods and not <Rhino.Mocks.Expect.Call> and 
-     * <LastCall>'s various methods. 
-     * 
+     * is not recommended. If you need to do so you _must_ use the <Rhino.Mocks.Expect.On> and
+     * <Rhino.Mocks.LastCall.On> methods and not <Rhino.Mocks.Expect.Call> and
+     * <LastCall>'s various methods.
+     *
      * Code Sample:
-     * 
+     *
      * (start code)
-     *  MockRepository mocks; 
-     * 
+     *  MockRepository mocks;
+     *
      *  [SetUp]
      *  public void Setup()
      *  {
@@ -75,7 +77,7 @@ namespace Rhino.Mocks
      *    [Test]
      *    public void CallMethodOnObject()
      *    {
-     *        
+     *
      *        IDemo demo = (IDemo)mocks.CreateMock(typeof(IDemo));
      *        // Setting up an expectation for a call to IDemo.VoidNoArg
      *        demo.VoidNoArg();
@@ -90,11 +92,11 @@ namespace Rhino.Mocks
      *         mocks.VerifyAll();
      *  }
      * (end)
-     * 
+     *
      * Class Responsbilities:
-     * 
+     *
      *  - Create and manage mock object throughout their life time
-     *     
+     *
      * See Also:
      * - <Rhino.Mocks.MockRepository.CreateMock>
      * - <Rhino.Mocks.MockRepository.DynamicMock>
@@ -109,7 +111,7 @@ namespace Rhino.Mocks
     {
         /// <summary>
         ///  Delegate: CreateMockState
-        ///  This is used internally to cleanly handle the creation of different 
+        ///  This is used internally to cleanly handle the creation of different
         ///  RecordMockStates.
         /// </summary>
         protected delegate IMockState CreateMockState(IMockedObject mockedObject);
@@ -119,27 +121,26 @@ namespace Rhino.Mocks
         /*
          * Variable: generatorMap
          * A static variable that is used to hold a map of Types to ProxyGenerators
-         * 
+         *
          */
 
         /// <summary>
         /// This is a map of types to ProxyGenerators.
         /// </summary>
-        [ThreadStatic]
-        private static readonly IDictionary<Type, ProxyGenerator> generatorMap = new Dictionary<Type, ProxyGenerator>();
+        private static readonly ConcurrentDictionary<Type, ProxyGenerator> generatorMap = new();
 
         /*
          * Variable: lastRepository
          * A static variable that is used to hold the repository that last had a method call
          * on one of its mock objects.
-         * 
+         *
          */
 
         /// <summary>
         /// This is used to record the last repository that has a method called on it.
         /// </summary>
-        [ThreadStatic]
-        internal static MockRepository lastRepository;
+        internal static AsyncLocal<MockRepository> lastRepository =
+            new AsyncLocal<MockRepository>();
 
         /*
          * Var: lastProxy
@@ -167,6 +168,7 @@ namespace Rhino.Mocks
 
         private readonly Stack recorders;
         private readonly IMethodRecorder rootRecorder;
+
         /// <summary>
         /// This is here because we can't put it in any of the recorders, since repeatable methods
         /// have no orderring, and if we try to handle them using the usual manner, we would get into
@@ -229,7 +231,6 @@ namespace Rhino.Mocks
             ArgManager.Clear();
         }
 
-
         #endregion
 
         #region Methods
@@ -237,10 +238,10 @@ namespace Rhino.Mocks
         /*
          * Method: Ordered
          * Moves the _entire_ <MockRepository> to use ordered recording.
-         * 
+         *
          * This call is only valid during the recording phase.
          * This call affects all mock objects that were created from this repository.
-         * 
+         *
          * The orderring is ended when the returned IDisposable's Dispose() method is called.
          * (start code)
          *    [Test]
@@ -253,14 +254,14 @@ namespace Rhino.Mocks
          *            demo.VoidNoArg();
          *            demo.IntNoArg();
          *        }
-         *        //Must exit the ordering before calling 
+         *        //Must exit the ordering before calling
          *        mocks.ReplayAll();
          *        //If we would try to call them in any other order, the test would fail
          *        demo.VoidNoArg();
          *        demo.IntNoArg();
          *    }
          * (end)
-         * 
+         *
          */
 
         /// <summary>
@@ -268,16 +269,20 @@ namespace Rhino.Mocks
         /// </summary>
         public IDisposable Ordered()
         {
-            return new RecorderChanger(this, Recorder, new OrderedMethodRecorder(Recorder, repeatableMethods));
+            return new RecorderChanger(
+                this,
+                Recorder,
+                new OrderedMethodRecorder(Recorder, repeatableMethods)
+            );
         }
 
         /*
          * Method: Unordered
          * Moves the _entire_ <MockRepository> to use unordered recording (the default).
-         * 
+         *
          * This call is only valid during the recording phase.
          * This call affects all mock objects that were created from this repository.
-         * 
+         *
          * (start code)
          *    [Test]
          *    public void CallMethodOnObject()
@@ -294,7 +299,7 @@ namespace Rhino.Mocks
          *            }
          *            demo.IntNoArg();
          *        }
-         *        //Must exit the ordering before calling 
+         *        //Must exit the ordering before calling
          *        mocks.ReplayAll();
          *        //The expectations we set up is:
          *        // 1. demo.VoidNoArgs();
@@ -314,14 +319,18 @@ namespace Rhino.Mocks
         /// </summary>
         public IDisposable Unordered()
         {
-            return new RecorderChanger(this, Recorder, new UnorderedMethodRecorder(Recorder, repeatableMethods));
+            return new RecorderChanger(
+                this,
+                Recorder,
+                new UnorderedMethodRecorder(Recorder, repeatableMethods)
+            );
         }
 
         /*
          * Method: CreateMock
          * Create a mock object with strict semantics.
          * Strict semantics means that any call that wasn't explicitly recorded is considered an
-         * error and would cause an exception to be thrown. 
+         * error and would cause an exception to be thrown.
          */
 
         /// <summary>
@@ -372,7 +381,11 @@ namespace Rhino.Mocks
         /// <param name="extraTypes">Extra interface types to mock.</param>
         /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class.</param>
         [Obsolete("Use StrictMultiMock instead")]
-        public object CreateMultiMock(Type mainType, Type[] extraTypes, params object[] argumentsForConstructor)
+        public object CreateMultiMock(
+            Type mainType,
+            Type[] extraTypes,
+            params object[] argumentsForConstructor
+        )
         {
             return StrictMultiMock(mainType, extraTypes, argumentsForConstructor);
         }
@@ -384,10 +397,20 @@ namespace Rhino.Mocks
         /// <param name="mainType">The main type to mock.</param>
         /// <param name="extraTypes">Extra interface types to mock.</param>
         /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class.</param>
-        public object StrictMultiMock(Type mainType, Type[] extraTypes, params object[] argumentsForConstructor)
+        public object StrictMultiMock(
+            Type mainType,
+            Type[] extraTypes,
+            params object[] argumentsForConstructor
+        )
         {
-            if (argumentsForConstructor == null) argumentsForConstructor = new object[0];
-            return CreateMockObject(mainType, CreateRecordState, extraTypes, argumentsForConstructor);
+            if (argumentsForConstructor == null)
+                argumentsForConstructor = new object[0];
+            return CreateMockObject(
+                mainType,
+                CreateRecordState,
+                extraTypes,
+                argumentsForConstructor
+            );
         }
 
         /// <summary>
@@ -408,9 +431,18 @@ namespace Rhino.Mocks
         /// <param name="mainType">The main type to mock.</param>
         /// <param name="extraTypes">Extra interface types to mock.</param>
         /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class.</param>
-        public object DynamicMultiMock(Type mainType, Type[] extraTypes, params object[] argumentsForConstructor)
+        public object DynamicMultiMock(
+            Type mainType,
+            Type[] extraTypes,
+            params object[] argumentsForConstructor
+        )
         {
-            return CreateMockObject(mainType, CreateDynamicRecordState, extraTypes, argumentsForConstructor);
+            return CreateMockObject(
+                mainType,
+                CreateDynamicRecordState,
+                extraTypes,
+                argumentsForConstructor
+            );
         }
 
         /*
@@ -448,17 +480,28 @@ namespace Rhino.Mocks
         /// <param name="type">Type.</param>
         /// <param name="extraTypes">Extra interface types to mock.</param>
         /// <param name="argumentsForConstructor">Arguments for the class' constructor.</param>
-        public object PartialMultiMock(Type type, Type[] extraTypes, params object[] argumentsForConstructor)
+        public object PartialMultiMock(
+            Type type,
+            Type[] extraTypes,
+            params object[] argumentsForConstructor
+        )
         {
             if (type.IsInterface)
-                throw new InvalidOperationException("Can't create a partial mock from an interface");
+                throw new InvalidOperationException(
+                    "Can't create a partial mock from an interface"
+                );
             List<Type> extraTypesWithMarker = new List<Type>(extraTypes);
             extraTypesWithMarker.Add(typeof(IPartialMockMarker));
-            return CreateMockObject(type, CreatePartialRecordState, extraTypesWithMarker.ToArray(), argumentsForConstructor);
+            return CreateMockObject(
+                type,
+                CreatePartialRecordState,
+                extraTypesWithMarker.ToArray(),
+                argumentsForConstructor
+            );
         }
 
         /// <summary>
-        /// Cause the mock state to change to replay, any further call is compared to the 
+        /// Cause the mock state to change to replay, any further call is compared to the
         /// ones that were called in the record state.
         /// </summary>
         /// <remarks>This method *cannot* be called from inside an ordering.</remarks>
@@ -469,7 +512,7 @@ namespace Rhino.Mocks
         }
 
         /// <summary>
-        /// Cause the mock state to change to replay, any further call is compared to the 
+        /// Cause the mock state to change to replay, any further call is compared to the
         /// ones that were called in the record state.
         /// </summary>
         /// <param name="obj">the object to move to replay state</param>
@@ -526,7 +569,7 @@ namespace Rhino.Mocks
         /*
          * Method: Verify
          * Verifies that all expectations has been met for a single mock object.
-         * After calling this method and action taken on the mock object would result in an 
+         * After calling this method and action taken on the mock object would result in an
          * exception even if the object is a dynamic mock.
          */
 
@@ -580,12 +623,17 @@ namespace Rhino.Mocks
          * Handles a method call for a mock object.
          */
 
-        internal object MethodCall(IInvocation invocation, object proxy, MethodInfo method, object[] args)
+        internal object MethodCall(
+            IInvocation invocation,
+            object proxy,
+            MethodInfo method,
+            object[] args
+        )
         {
-            //This can happen only if a vritual method call originated from 
-            //the constructor, before Rhino Mocks knows about the existance 
+            //This can happen only if a vritual method call originated from
+            //the constructor, before Rhino Mocks knows about the existance
             //of this proxy. Those type of calls will be ignored and not count
-            //as expectations, since there is not way to relate them to the 
+            //as expectations, since there is not way to relate them to the
             //proper state.
             if (proxies.ContainsKey(proxy) == false)
             {
@@ -611,7 +659,8 @@ namespace Rhino.Mocks
         internal object GetMockObjectFromInvocationProxy(object invocationProxy)
         {
             object proxy = delegateProxies[invocationProxy];
-            if (proxy != null) return proxy;
+            if (proxy != null)
+                return proxy;
             return invocationProxy;
         }
 
@@ -634,7 +683,8 @@ namespace Rhino.Mocks
         {
             if (Recorder != rootRecorder)
                 throw new InvalidOperationException(
-                    "Can't start replaying because Ordered or Unordered properties were call and not yet disposed.");
+                    "Can't start replaying because Ordered or Unordered properties were call and not yet disposed."
+                );
         }
 
         private void ClearLastProxy(object obj)
@@ -643,14 +693,26 @@ namespace Rhino.Mocks
                 lastMockedObject = null;
         }
 
-        private object MockClass(CreateMockState mockStateFactory, Type type, Type[] extras, object[] argumentsForConstructor)
+        private object MockClass(
+            CreateMockState mockStateFactory,
+            Type type,
+            Type[] extras,
+            object[] argumentsForConstructor
+        )
         {
             if (type.IsSealed)
                 throw new NotSupportedException("Can't create mocks of sealed classes");
             List<Type> implementedTypesForGenericInvocationDiscoverability = new List<Type>(extras);
             implementedTypesForGenericInvocationDiscoverability.Add(type);
-            ProxyInstance proxyInstance = new ProxyInstance(this, implementedTypesForGenericInvocationDiscoverability.ToArray());
-            RhinoInterceptor interceptor = new RhinoInterceptor(this, proxyInstance,invocationVisitorsFactory.CreateStandardInvocationVisitors(proxyInstance, this));
+            ProxyInstance proxyInstance = new ProxyInstance(
+                this,
+                implementedTypesForGenericInvocationDiscoverability.ToArray()
+            );
+            RhinoInterceptor interceptor = new RhinoInterceptor(
+                this,
+                proxyInstance,
+                invocationVisitorsFactory.CreateStandardInvocationVisitors(proxyInstance, this)
+            );
             ArrayList types = new ArrayList();
             types.AddRange(extras);
             types.Add(typeof(IMockedObject));
@@ -658,23 +720,34 @@ namespace Rhino.Mocks
             try
             {
                 proxyGenerationOptions = ProxyGenerationOptions.Default;
-                proxy = GetProxyGenerator(type).CreateClassProxy(type, (Type[])types.ToArray(typeof(Type)),
-                                                   proxyGenerationOptions,
-                                                   argumentsForConstructor, interceptor);
+                proxy = GetProxyGenerator(type)
+                    .CreateClassProxy(
+                        type,
+                        (Type[])types.ToArray(typeof(Type)),
+                        proxyGenerationOptions,
+                        argumentsForConstructor,
+                        interceptor
+                    );
             }
             catch (MissingMethodException mme)
             {
-                throw new MissingMethodException("Can't find a constructor with matching arguments", mme);
+                throw new MissingMethodException(
+                    "Can't find a constructor with matching arguments",
+                    mme
+                );
             }
             catch (TargetInvocationException tie)
             {
-                throw new Exception("Exception in constructor: " + tie.InnerException, tie.InnerException);
+                throw new Exception(
+                    "Exception in constructor: " + tie.InnerException,
+                    tie.InnerException
+                );
             }
             IMockedObject mockedObject = (IMockedObject)proxy;
             mockedObject.ConstructorArguments = argumentsForConstructor;
             IMockState value = mockStateFactory(mockedObject);
             proxies.Add(proxy, value);
-            GC.SuppressFinalize(proxy);//avoid issues with expectations created/validated on the finalizer thread
+            GC.SuppressFinalize(proxy); //avoid issues with expectations created/validated on the finalizer thread
             return proxy;
         }
 
@@ -683,16 +756,26 @@ namespace Rhino.Mocks
             object proxy;
             List<Type> implementedTypesForGenericInvocationDiscoverability = new List<Type>(extras);
             implementedTypesForGenericInvocationDiscoverability.Add(type);
-            ProxyInstance proxyInstance = new ProxyInstance(this,
-                                                             implementedTypesForGenericInvocationDiscoverability
-                                                                 .ToArray());
-            RhinoInterceptor interceptor = new RhinoInterceptor(this, proxyInstance,invocationVisitorsFactory.CreateStandardInvocationVisitors(proxyInstance, this));
+            ProxyInstance proxyInstance = new ProxyInstance(
+                this,
+                implementedTypesForGenericInvocationDiscoverability.ToArray()
+            );
+            RhinoInterceptor interceptor = new RhinoInterceptor(
+                this,
+                proxyInstance,
+                invocationVisitorsFactory.CreateStandardInvocationVisitors(proxyInstance, this)
+            );
 
             List<Type> types = new List<Type>();
             types.AddRange(extras);
             types.Add(typeof(IMockedObject));
-            proxy =
-                GetProxyGenerator(type).CreateInterfaceProxyWithoutTarget(type, types.ToArray(), proxyGenerationOptions, interceptor);
+            proxy = GetProxyGenerator(type)
+                .CreateInterfaceProxyWithoutTarget(
+                    type,
+                    types.ToArray(),
+                    proxyGenerationOptions,
+                    interceptor
+                );
             IMockState value = mockStateFactory((IMockedObject)proxy);
             proxies.Add(proxy, value);
             return proxy;
@@ -706,15 +789,25 @@ namespace Rhino.Mocks
             object proxy;
 
             ProxyInstance proxyInstance = new ProxyInstance(this, type);
-            RhinoInterceptor interceptor = new RhinoInterceptor(this, proxyInstance,invocationVisitorsFactory.CreateStandardInvocationVisitors(proxyInstance, this));
+            RhinoInterceptor interceptor = new RhinoInterceptor(
+                this,
+                proxyInstance,
+                invocationVisitorsFactory.CreateStandardInvocationVisitors(proxyInstance, this)
+            );
 
             Type[] types = new Type[] { typeof(IMockedObject) };
-            var delegateTargetInterface = delegateTargetInterfaceCreator.GetDelegateTargetInterface(type);
-            object target = GetProxyGenerator(type).CreateInterfaceProxyWithoutTarget(
-                delegateTargetInterface,
-                types, proxyGenerationOptions, interceptor);
+            var delegateTargetInterface = delegateTargetInterfaceCreator.GetDelegateTargetInterface(
+                type
+            );
+            object target = GetProxyGenerator(type)
+                .CreateInterfaceProxyWithoutTarget(
+                    delegateTargetInterface,
+                    types,
+                    proxyGenerationOptions,
+                    interceptor
+                );
 
-            proxy = Delegate.CreateDelegate(type, target, delegateTargetInterface.Name+ ".Invoke");
+            proxy = Delegate.CreateDelegate(type, target, delegateTargetInterface.Name + ".Invoke");
             delegateProxies.Add(target, proxy);
 
             IMockState value = mockStateFactory(GetMockedObject(proxy));
@@ -728,7 +821,12 @@ namespace Rhino.Mocks
         /// <param name="extras">Additional types to be implemented, this can be only interfaces </param>
         /// <param name="argumentsForConstructor">optional arguments for the constructor</param>
         /// <returns></returns>
-        protected object CreateMockObject(Type type, CreateMockState factory, Type[] extras, params object[] argumentsForConstructor)
+        protected object CreateMockObject(
+            Type type,
+            CreateMockState factory,
+            Type[] extras,
+            params object[] argumentsForConstructor
+        )
         {
             foreach (Type extraType in extras)
             {
@@ -744,7 +842,8 @@ namespace Rhino.Mocks
                 {
                     throw new ArgumentException(
                         "Constructor arguments should not be supplied when mocking an interface",
-                        "argumentsForConstructor");
+                        "argumentsForConstructor"
+                    );
                 }
                 return MockInterface(factory, type, extras);
             }
@@ -752,8 +851,10 @@ namespace Rhino.Mocks
             {
                 if (argumentsForConstructor != null && argumentsForConstructor.Length > 0)
                 {
-                    throw new ArgumentException("Constructor arguments should not be supplied when mocking a delegate",
-                                                "argumentsForConstructor");
+                    throw new ArgumentException(
+                        "Constructor arguments should not be supplied when mocking a delegate",
+                        "argumentsForConstructor"
+                    );
                 }
                 return MockDelegate(factory, type);
             }
@@ -765,20 +866,22 @@ namespace Rhino.Mocks
         {
             if (proxies.ContainsKey(obj) == false)
                 throw new ObjectNotMockFromThisRepositoryException(
-                    "The object is not a mock object that belong to this repository.");
+                    "The object is not a mock object that belong to this repository."
+                );
         }
 
         /// <summary>
         ///  Method: GetMockedObject
-        ///  Get an IProxy from a mocked object instance, or throws if the 
+        ///  Get an IProxy from a mocked object instance, or throws if the
         ///  object is not a mock object.
         /// </summary>
         protected internal static IMockedObject GetMockedObject(object mockedInstance)
         {
             IMockedObject mockedObj = GetMockedObjectOrNull(mockedInstance);
             if (mockedObj == null)
-                throw new InvalidOperationException("The object '" + mockedInstance +
-                                                    "' is not a mocked object.");
+                throw new InvalidOperationException(
+                    "The object '" + mockedInstance + "' is not a mocked object."
+                );
             return mockedObj;
         }
 
@@ -850,7 +953,7 @@ namespace Rhino.Mocks
         /*
          * Method: ReplayAll
          * Moves all the mock objects in the repository to replay state.
-         * 
+         *
          * Note:
          * This method will skip any mock object that you've manually moved to replay state
          * by calling <Replay>
@@ -873,10 +976,10 @@ namespace Rhino.Mocks
         /*
          * Method: VerifyAll
          * Verifies that all the expectations on all mock objects in the repository are met.
-         * 
+         *
          * Note:
          * This method skip any mock objects that you've manually verified using <Verify>
-         * 
+         *
          * Exception safety:
          * If an unexpected exception has been thrown (which would fail the test) and the Repository
          * still have unsatisfied expectations, this method will cause _another_ exception, that may
@@ -898,7 +1001,7 @@ namespace Rhino.Mocks
          *    //The afore mentioned action
          *    mocks.VerifyAll()//won't occur if an exception is thrown
          * (end)
-         * 
+         *
          * This way you can get the real exception from the unit testing framework.
          */
 
@@ -907,8 +1010,8 @@ namespace Rhino.Mocks
         /// </summary>
         public void VerifyAll()
         {
-            if (lastRepository == this)
-                lastRepository = null;
+            if (lastRepository.Value == this)
+                lastRepository.Value = null;
             if (proxies.Keys.Count == 0)
                 return;
             StringCollection validationErrors = new StringCollection();
@@ -953,34 +1056,27 @@ namespace Rhino.Mocks
         {
             get
             {
-                if (lastRepository == null)
+                if (lastRepository.Value == null)
                     return null;
-                return lastRepository.lastMockedObject;
+                return lastRepository.Value.lastMockedObject;
             }
         }
 
         /// <summary>
         /// Gets the proxy generator for a specific type. Having a single ProxyGenerator
         /// with multiple types linearly degrades the performance so this implementation
-        /// keeps one ProxyGenerator per type. 
+        /// keeps one ProxyGenerator per type.
         /// </summary>
         protected virtual ProxyGenerator GetProxyGenerator(Type type)
         {
-            lock (generatorMap)
-            {
-                if (!generatorMap.ContainsKey(type))
-                {
-                    generatorMap[type] = new ProxyGenerator();
-                }
-
-                return generatorMap[type];
-            }
+            return generatorMap.GetOrAdd(type, _ => new ProxyGenerator());
         }
 
-
-
         /// <summary>Set the exception to be thrown when verified is called.</summary>
-        protected internal static void SetExceptionToBeThrownOnVerify(object proxy, ExpectationViolationException expectationViolationException)
+        protected internal static void SetExceptionToBeThrownOnVerify(
+            object proxy,
+            ExpectationViolationException expectationViolationException
+        )
         {
             MockRepository repository = GetMockedObject(proxy).Repository;
             if (repository.proxies.ContainsKey(proxy) == false)
@@ -1008,13 +1104,18 @@ namespace Rhino.Mocks
         /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
         public T StrictMock<T>(params object[] argumentsForConstructor)
         {
-            return (T)CreateMockObject(typeof(T), CreateRecordState, new Type[0], argumentsForConstructor);
+            return (T)CreateMockObject(
+                typeof(T),
+                CreateRecordState,
+                new Type[0],
+                argumentsForConstructor
+            );
         }
 
         private static bool ShouldUseRemotingProxy(Type type, object[] argumentsForConstructor)
         {
-            return typeof(MarshalByRefObject).IsAssignableFrom(type) &&
-                (argumentsForConstructor == null || argumentsForConstructor.Length == 0);
+            return typeof(MarshalByRefObject).IsAssignableFrom(type)
+                && (argumentsForConstructor == null || argumentsForConstructor.Length == 0);
         }
 
         /*
@@ -1031,7 +1132,12 @@ namespace Rhino.Mocks
         public T DynamicMock<T>(params object[] argumentsForConstructor)
             where T : class
         {
-            return (T)CreateMockObject(typeof(T), CreateDynamicRecordState, new Type[0], argumentsForConstructor);
+            return (T)CreateMockObject(
+                typeof(T),
+                CreateDynamicRecordState,
+                new Type[0],
+                argumentsForConstructor
+            );
         }
 
         /// <summary>
@@ -1078,7 +1184,6 @@ namespace Rhino.Mocks
             return StrictMultiMock<T>(extraTypes, argumentsForConstructor);
         }
 
-
         /// <summary>
         /// Create a strict mock object from several types with strict semantics.
         /// </summary>
@@ -1113,21 +1218,22 @@ namespace Rhino.Mocks
          * Method: PartialMock
          * Create a mock object with from a class that defaults to calling the class methods
          * if no expectation is set on the method.
-         * 
+         *
          */
 
         /// <summary>
         /// Create a mock object with from a class that defaults to calling the class methods
         /// </summary>
         /// <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        public T PartialMock<T>(params object[] argumentsForConstructor) where T : class
+        public T PartialMock<T>(params object[] argumentsForConstructor)
+            where T : class
         {
             return (T)PartialMock(typeof(T), argumentsForConstructor);
         }
 
         /// <summary>
-        /// Create a stub object, one that has properties and events ready for use, and 
-        /// can have methods called on it. It requires an explicit step in order to create 
+        /// Create a stub object, one that has properties and events ready for use, and
+        /// can have methods called on it. It requires an explicit step in order to create
         /// an expectation for a stub.
         /// </summary>
         /// <param name="argumentsForConstructor">The arguments for constructor.</param>
@@ -1146,7 +1252,10 @@ namespace Rhino.Mocks
         /// <returns>The stub</returns>
         public object Stub(Type type, params object[] argumentsForConstructor)
         {
-            CreateMockState createStub = mockedObject => new StubRecordMockState(mockedObject, this);
+            CreateMockState createStub = mockedObject => new StubRecordMockState(
+                mockedObject,
+                this
+            );
             return CreateMockObject(type, createStub, new Type[0], argumentsForConstructor);
         }
 
@@ -1180,12 +1289,12 @@ namespace Rhino.Mocks
         }
 
         /// <summary>
-        /// Register a call on a prperty behavior 
+        /// Register a call on a prperty behavior
         /// </summary>
         /// <param name="instance"></param>
         protected internal void RegisterPropertyBehaviorOn(IMockedObject instance)
         {
-            lastRepository = this;
+            lastRepository.Value = this;
             lastMockedObject = instance;
             proxies[instance].NotifyCallOnPropertyBehavior();
         }
